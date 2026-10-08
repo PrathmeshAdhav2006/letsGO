@@ -8,8 +8,14 @@ import (
 
 func main() {
 
-	addr := flag.String("addr", "4000", "HTTP network address")
+	type config struct {
+		addr string
+	}
+
+	var cfg config
+	flag.StringVar(&cfg.addr, "addr", ":4000", "HTTP network address")
 	flag.Parse()
+
 	mux := http.NewServeMux()
 	fileServer := http.FileServer(http.Dir("./ui/static/"))
 	mux.Handle("/static/", http.StripPrefix("/static", fileServer))
@@ -18,6 +24,6 @@ func main() {
 	mux.HandleFunc("/snippet/create", snippetCreate)
 
 	log.Printf("Starting server on %s", *addr)
-	err := http.ListenAndServe(*addr, mux)
+	err := http.ListenAndServe(cfg.addr, mux)
 	log.Fatal(err)
 }
