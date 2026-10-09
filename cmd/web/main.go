@@ -12,13 +12,10 @@ type application struct {
 	infoLog  *log.Logger
 }
 
-type config struct {
-	addr string
-}
-
 func main() {
 
-	var cfg config
+	addr := flag.String("addr", ":4000", "HTTP network address")
+	flag.Parse()
 
 	infoLog := log.New(os.Stdout, "INFO\t", log.Ldate|log.Ltime)
 	errLog := log.New(os.Stderr, "ERROR\t", log.Ldate|log.Ltime|log.Llongfile)
@@ -28,23 +25,13 @@ func main() {
 		infoLog:  infoLog,
 	}
 
-	flag.StringVar(&cfg.addr, "addr", ":4000", "HTTP network address")
-	flag.Parse()
-
-	mux := http.NewServeMux()
-	fileServer := http.FileServer(http.Dir("./ui/static/"))
-	mux.Handle("/static/", http.StripPrefix("/static", fileServer))
-	mux.HandleFunc("/", app.home)
-	mux.HandleFunc("/snippet/view", app.snippetView)
-	mux.HandleFunc("/snippet/create", app.snippetCreate)
-
 	srv := &http.Server{
-		Addr:     cfg.addr,
+		Addr:     *addr,
 		ErrorLog: app.errorLog,
-		Handler:  mux,
+		Handler:  app.routes(),
 	}
 
-	app.infoLog.Printf("Starting server on %s", cfg.addr)
+	app.infoLog.Printf("Starting server on %s", addr)
 	err := srv.ListenAndServe()
 	app.errorLog.Fatal(err)
 }
