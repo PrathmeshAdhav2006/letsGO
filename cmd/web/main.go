@@ -4,9 +4,13 @@ import (
 	"flag"
 	"log"
 	"net/http"
+	"os"
 )
 
 func main() {
+
+	infologger := log.New(os.Stdout, "INFO\t", log.Ldate|log.Ltime)
+	errlogger := log.New(os.Stderr, "ERROR\t", log.Ldate|log.Ltime|log.Llongfile)
 
 	type config struct {
 		addr string
@@ -23,7 +27,7 @@ func main() {
 	mux.HandleFunc("/snippet/view", snippetView)
 	mux.HandleFunc("/snippet/create", snippetCreate)
 
-	log.Printf("Starting server on %s", *addr)
+	infologger.Printf("Starting server on %s", cfg.addr)
 	err := http.ListenAndServe(cfg.addr, mux)
-	log.Fatal(err)
+	errlogger.Fatal(err)
 }
