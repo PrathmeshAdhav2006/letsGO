@@ -12,20 +12,41 @@ import (
 )
 
 func (app *application) home(w http.ResponseWriter, r *http.Request) {
+
 	if r.URL.Path != "/" {
 		app.notFound(w)
 		return
 	}
 
 	snippets, err := app.snippets.Latest()
+	if err != nil {
+		app.serverError(w, err)
+		return
+	}
+
+	files := []string{
+		"./ui/html/base.tmpl",
+		"./ui/html/partials/nav.tmpl",
+		"./ui/html/pages/home.tmpl",
+	}
+
+	ts, err := template.ParseFiles(files...)
 
 	if err != nil {
 		app.serverError(w, err)
 		return
 	}
 
-	for _, snippet := range snippets {
-		fmt.Fprintf(w, "%+v\n", snippet)
+	// Create an instance of a templateData struct holding the slice of
+	// snippets.
+	data := &templateData{
+		Snippets: snippets,
+	}
+
+	// Pass in the templateData struct when executing the template.
+	err = ts.ExecuteTemplate(w, "base", data)
+	if err != nil {
+		app.serverError(w, err)
 	}
 
 	// files := []string{
@@ -79,9 +100,13 @@ func (app *application) snippetView(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// And then execute them. Notice how we are passing in the snippet
-	// data (a models.Snippet struct) as the final parameter?
-	err = ts.ExecuteTemplate(w, "base", snippet)
+	// Create an instance of a templateData struct holding the snippet data.
+	data := &templateData{
+		Snippet: snippet,
+	}
+
+	// Pass in the templateData struct when executing the template.
+	err = ts.ExecuteTemplate(w, "base", data)
 	if err != nil {
 		app.serverError(w, err)
 	}
