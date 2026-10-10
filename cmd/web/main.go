@@ -7,12 +7,14 @@ import (
 	"net/http"
 	"os"
 
+	"github.com/PrathmeshAdhav2006/letsGO/internal/models"
 	_ "github.com/go-sql-driver/mysql"
 )
 
 type application struct {
 	errorLog *log.Logger
 	infoLog  *log.Logger
+	snippets *models.SnippetModel
 }
 
 func main() {
@@ -26,9 +28,18 @@ func main() {
 	infoLog := log.New(os.Stdout, "INFO\t", log.Ldate|log.Ltime)
 	errLog := log.New(os.Stderr, "ERROR\t", log.Ldate|log.Ltime|log.Llongfile)
 
+	db, err := openDB(*dsn)
+	if err != nil {
+		errLog.Fatal(err)
+	}
+	infoLog.Print("Database Connected Successfully")
+
+	defer db.Close()
+
 	app := &application{
 		errorLog: errLog,
 		infoLog:  infoLog,
+		snippets: &models.SnippetModel{DB: db},
 	}
 
 	srv := &http.Server{
@@ -36,13 +47,6 @@ func main() {
 		ErrorLog: app.errorLog,
 		Handler:  app.routes(),
 	}
-
-	db, err := openDB(*dsn)
-	if err != nil {
-		app.errorLog.Fatal(err)
-	}
-	app.infoLog.Print("Database Connected Successfully")
-	defer db.Close()
 
 	app.infoLog.Printf("Starting server on %s", *addr)
 	err = srv.ListenAndServe()
