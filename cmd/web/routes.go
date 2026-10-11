@@ -14,5 +14,5 @@ func (app *application) routes() http.Handler {
 	mux.HandleFunc("/snippet/view", app.snippetView)
 	mux.HandleFunc("/snippet/create", app.snippetCreate)
 
-	return SecureHeaders(mux)
+	return app.logRequest(SecureHeaders(mux))
 }
