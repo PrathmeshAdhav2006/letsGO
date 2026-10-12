@@ -3,19 +3,16 @@ package main
 import (
 	"errors"
 	"fmt"
-
 	"net/http"
 	"strconv"
 
 	"github.com/PrathmeshAdhav2006/letsGO/internal/models"
+	"github.com/julienschmidt/httprouter"
 )
 
 func (app *application) home(w http.ResponseWriter, r *http.Request) {
-
-	if r.URL.Path != "/" {
-		app.notFound(w)
-		return
-	}
+	// Because httprouter matches the "/" path exactly, we can now remove the
+	// manual check of r.URL.Path != "/" from this handler.
 
 	snippets, err := app.snippets.Latest()
 	if err != nil {
@@ -23,19 +20,20 @@ func (app *application) home(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// Call the newTemplateData() helper to get a templateData struct containing
-	// the 'default' data (which for now is just the current year), and add the snippets slice to it.
-
 	data := app.newTemplateData(r)
 	data.Snippets = snippets
 
-	// Use the new render helper.
 	app.render(w, http.StatusOK, "home.tmpl", data)
 
 }
 
 func (app *application) snippetView(w http.ResponseWriter, r *http.Request) {
-	id, err := strconv.Atoi(r.URL.Query().Get("id"))
+
+	params := httprouter.ParamsFromContext(r.Context())
+
+	// We can then use the ByName() method to get the value of the "id" named
+	// parameter from the slice and validate it as normal.
+	id, err := strconv.Atoi(params.ByName("id"))
 	if err != nil || id < 1 {
 		app.notFound(w)
 		return
@@ -58,6 +56,10 @@ func (app *application) snippetView(w http.ResponseWriter, r *http.Request) {
 }
 
 func (app *application) snippetCreate(w http.ResponseWriter, r *http.Request) {
+	w.Write([]byte("Display the form for creating a new snippet..."))
+}
+
+func (app *application) snippetCreatePost(w http.ResponseWriter, r *http.Request) {
 	if r.Method != http.MethodPost {
 		w.Header().Set("Allow", http.MethodPost)
 		app.clientError(w, http.StatusMethodNotAllowed)
